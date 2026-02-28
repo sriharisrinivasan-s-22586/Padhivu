@@ -52,11 +52,12 @@ export const getIdZoomInByPath = () => {
 };
 
 export const isSYProtocol = (url: string) => {
-    return /^siyuan:\/\/blocks\/\d{14}-\w{7}/.test(url);
+    return /^(siyuan|padhivu):\/\/blocks\/\d{14}-\w{7}/.test(url);
 };
 
 export const getIdFromSYProtocol = (url: string) => {
-    return url.substring(16, 16 + 22);
+    const idMatch = url.match(/:\/\/blocks\/(\d{14}-\w{7})/);
+    return idMatch ? idMatch[1] : "";
 };
 
 /* redirect to auth page */

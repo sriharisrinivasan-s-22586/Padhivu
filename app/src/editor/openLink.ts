@@ -18,7 +18,7 @@ export const processSYLink = (app: App, url: string) => {
     let urlObj: URL;
     try {
         urlObj = new URL(url);
-        if (urlObj.protocol !== "siyuan:") {
+        if (urlObj.protocol !== "siyuan:" && urlObj.protocol !== "padhivu:") {
             return false;
         }
     } catch (error) {

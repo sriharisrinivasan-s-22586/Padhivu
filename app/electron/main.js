@@ -40,6 +40,7 @@ const isDevEnv = process.env.NODE_ENV === "development";
 const appVer = app.getVersion();
 const confDir = path.join(app.getPath("home"), ".config", "siyuan");
 const windowStatePath = path.join(confDir, "windowState.json");
+const APP_PROTOCOL_SCHEMES = ["padhivu://", "siyuan://"];
 let bootWindow;
 let latestActiveWindow;
 let firstOpen = false;
@@ -48,6 +49,14 @@ let kernelPort = 6806;
 let resetWindowStateOnRestart = false;
 
 remote.initialize();
+
+const isAppProtocolURL = (url) => {
+    return typeof url === "string" && APP_PROTOCOL_SCHEMES.some((scheme) => url.startsWith(scheme));
+};
+
+const findAppProtocolArg = (argv) => {
+    return argv.find((arg) => isAppProtocolURL(arg));
+};
 
 app.setPath("userData", app.getPath("userData") + "-Electron"); // `~/.config` 下 Electron 相关文件夹名称改为 `SiYuan-Electron` https://github.com/siyuan-note/siyuan/issues/3349
 fs.rmSync(app.getPath("appData") + "/" + app.name, {recursive: true}); // 删除自动创建的应用目录 https://github.com/siyuan-note/siyuan/issues/13150
@@ -420,7 +429,7 @@ const initMainWindow = () => {
         writeLog("window position [x=" + x + ", y=" + y + "]");
         currentWindow.setPosition(x, y);
     }
-    currentWindow.webContents.userAgent = "SiYuan/" + appVer + " https://b3log.org/siyuan Electron " + currentWindow.webContents.userAgent;
+    currentWindow.webContents.userAgent = "Padhivu/" + appVer + " https://b3log.org/siyuan Electron " + currentWindow.webContents.userAgent;
 
     // set proxy
     net.fetch(getServer() + "/api/system/getNetwork", {method: "POST"}).then((response) => {
@@ -468,15 +477,15 @@ const initMainWindow = () => {
     });
 
     currentWindow.webContents.on("did-finish-load", () => {
-        let siyuanOpenURL = process.argv.find((arg) => arg.startsWith("siyuan://"));
-        if (siyuanOpenURL) {
+        let appOpenURL = findAppProtocolArg(process.argv);
+        if (appOpenURL) {
             if (currentWindow.isMinimized()) {
                 currentWindow.restore();
             }
             currentWindow.show();
             setTimeout(() => { // 等待界面js执行完毕
-                writeLog(siyuanOpenURL);
-                currentWindow.webContents.send("siyuan-open-url", siyuanOpenURL);
+                writeLog(appOpenURL);
+                currentWindow.webContents.send("siyuan-open-url", appOpenURL);
             }, 2000);
         }
     });
@@ -503,7 +512,7 @@ const initMainWindow = () => {
     });
 
     // 菜单
-    const productName = "SiYuan";
+    const productName = "Padhivu";
     const template = [{
         label: productName, submenu: [{
             label: `About ${productName}`, role: "about",
@@ -724,6 +733,7 @@ const initKernel = (workspace, port, lang) => {
     });
 };
 
+app.setAsDefaultProtocolClient("padhivu");
 app.setAsDefaultProtocolClient("siyuan");
 
 app.commandLine.appendSwitch("disable-web-security");
@@ -741,7 +751,7 @@ if (!app.isPackaged) {
 
 for (let i = argStart; i < process.argv.length; i++) {
     let arg = process.argv[i];
-    if (arg.startsWith("--workspace=") || arg.startsWith("--openAsHidden") || arg.startsWith("--port=") || arg.startsWith("siyuan://")) {
+    if (arg.startsWith("--workspace=") || arg.startsWith("--openAsHidden") || arg.startsWith("--port=") || isAppProtocolURL(arg)) {
         // 跳过内置参数
         if (arg.startsWith("--openAsHidden")) {
             openAsHidden = true;
@@ -1124,7 +1134,7 @@ app.whenReady().then(() => {
             },
         });
         printWin.center();
-        printWin.webContents.userAgent = "SiYuan/" + appVer + " https://b3log.org/siyuan Electron " + printWin.webContents.userAgent;
+        printWin.webContents.userAgent = "Padhivu/" + appVer + " https://b3log.org/siyuan Electron " + printWin.webContents.userAgent;
         printWin.loadURL(data);
         windowNavigate(printWin, "export");
     });
@@ -1173,7 +1183,7 @@ app.whenReady().then(() => {
         } else {
             win.center();
         }
-        win.webContents.userAgent = "SiYuan/" + appVer + " https://b3log.org/siyuan Electron " + win.webContents.userAgent;
+        win.webContents.userAgent = "Padhivu/" + appVer + " https://b3log.org/siyuan Electron " + win.webContents.userAgent;
         win.webContents.session.setSpellCheckerLanguages(["en-US"]);
         win.loadURL(data.url);
         windowNavigate(win, "window");
@@ -1224,7 +1234,7 @@ app.whenReady().then(() => {
                 if ("win32" === process.platform || "linux" === process.platform) {
                     // 系统托盘
                     tray = new Tray(path.join(appDir, "stage", "icon-large.png"));
-                    tray.setToolTip(`${path.basename(data.workspaceDir)} - SiYuan v${appVer}`);
+                    tray.setToolTip(`${path.basename(data.workspaceDir)} - Padhivu v${appVer}`);
                     const mainWindow = getWindowByContentId(event.sender.id);
                     if (!mainWindow || mainWindow.isDestroyed()) {
                         return;
@@ -1434,7 +1444,7 @@ app.whenReady().then(() => {
 });
 
 app.on("open-url", async (event, url) => { // for macOS
-    if (url.startsWith("siyuan://")) {
+    if (isAppProtocolURL(url)) {
         let isBackground = true;
         if (workspaces.length === 0) {
             isBackground = false;
@@ -1492,14 +1502,14 @@ app.on("second-instance", (event, argv) => {
         return;
     }
 
-    const siyuanURL = argv.find((arg) => arg.startsWith("siyuan://"));
+    const appProtocolURL = findAppProtocolArg(argv);
     workspaces.forEach(item => {
-        if (item.browserWindow && !item.browserWindow.isDestroyed() && siyuanURL) {
-            item.browserWindow.webContents.send("siyuan-open-url", siyuanURL);
+        if (item.browserWindow && !item.browserWindow.isDestroyed() && appProtocolURL) {
+            item.browserWindow.webContents.send("siyuan-open-url", appProtocolURL);
         }
     });
 
-    if (!siyuanURL && 0 < workspaces.length) {
+    if (!appProtocolURL && 0 < workspaces.length) {
         showWindow(workspaces[0].browserWindow);
     }
 });
