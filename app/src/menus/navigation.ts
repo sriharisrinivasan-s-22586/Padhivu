@@ -15,7 +15,7 @@ import {closePanel} from "../mobile/util/closePanel";
 import {popSearch} from "../mobile/menu/search";
 /// #endif
 import {Constants} from "../constants";
-import {newFile} from "../util/newFile";
+import {newFile, newFolder} from "../util/newFile";
 import {hasClosestByTag, hasTopClosestByTag} from "../protyle/util/hasClosest";
 import {deleteFiles} from "../editor/deleteFile";
 import {getDockByType} from "../layout/tabUtil";
@@ -30,6 +30,24 @@ import {transaction} from "../protyle/wysiwyg/transaction";
 import {emitOpenMenu} from "../plugin/EventBus";
 import {openByMobile} from "../protyle/util/compatibility";
 import {addFilesToDatabase} from "../protyle/render/av/addToDatabase";
+
+const createFolderInTree = (notebookId: string, pathString: string) => {
+    newFolder({
+        notebookId,
+        currentPath: pathString,
+        listDocTree: true,
+    });
+};
+
+const createSubDocInTree = (app: App, notebookId: string, pathString: string) => {
+    newFile({
+        app,
+        notebookId,
+        currentPath: pathString,
+        useSavePath: false,
+        listDocTree: true,
+    });
+};
 
 const initMultiMenu = (selectItemElements: NodeListOf<Element>, app: App) => {
     window.siyuan.menus.menu.element.setAttribute("data-from", Constants.MENU_FROM_DOC_TREE_MORE_ITEMS);
@@ -352,6 +370,22 @@ export const initNavigationMenu = (app: App, liElement: HTMLElement) => {
     if (!window.siyuan.config.readonly) {
         window.siyuan.menus.menu.append(new MenuItem({id: "separator_1", type: "separator"}).element);
         window.siyuan.menus.menu.append(new MenuItem({
+            id: "newSubDoc",
+            label: window.siyuan.languages.newSubDoc,
+            icon: "iconFile",
+            click: () => {
+                createSubDocInTree(app, notebookId, "/");
+            }
+        }).element);
+        window.siyuan.menus.menu.append(new MenuItem({
+            id: "newFolder",
+            label: `${window.siyuan.languages.new} ${window.siyuan.languages.folder}`,
+            icon: "iconFolder",
+            click: () => {
+                createFolderInTree(notebookId, "/");
+            }
+        }).element);
+        window.siyuan.menus.menu.append(new MenuItem({
             id: "close",
             label: window.siyuan.languages.close,
             icon: "iconClose",
@@ -455,6 +489,23 @@ export const initFileMenu = (app: App, notebookId: string, pathString: string, l
     name = getDisplayName(name, false, true);
     if (!window.siyuan.config.readonly) {
         const topElement = hasTopClosestByTag(liElement, "UL");
+        window.siyuan.menus.menu.append(new MenuItem({
+            id: "newSubDoc",
+            icon: "iconFile",
+            label: window.siyuan.languages.newSubDoc,
+            click: () => {
+                createSubDocInTree(app, notebookId, pathString);
+            }
+        }).element);
+        window.siyuan.menus.menu.append(new MenuItem({
+            id: "newFolder",
+            icon: "iconFolder",
+            label: `${window.siyuan.languages.new} ${window.siyuan.languages.folder}`,
+            click: () => {
+                createFolderInTree(notebookId, pathString);
+            }
+        }).element);
+        window.siyuan.menus.menu.append(new MenuItem({id: "separator_new_folder", type: "separator"}).element);
         if (window.siyuan.config.fileTree.sort === 6 || (topElement && topElement.dataset.sortmode === "6")) {
             window.siyuan.menus.menu.append(new MenuItem({
                 id: "newDocAbove",

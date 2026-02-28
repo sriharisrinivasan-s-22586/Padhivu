@@ -1,4 +1,5 @@
 import {showMessage} from "../dialog/message";
+import {Dialog} from "../dialog";
 import {getAllModels} from "../layout/getAll";
 import {hasClosestByClassName, hasTopClosestByTag} from "../protyle/util/hasClosest";
 import {getDockByType} from "../layout/tabUtil";
@@ -13,6 +14,7 @@ import {replaceFileName, validateName} from "../editor/rename";
 import {hideElements} from "../protyle/ui/hideElements";
 import {openMobileFileById} from "../mobile/editor";
 import {App} from "../index";
+import {isMobile} from "./functions";
 
 export const getNewFilePath = (useSavePath: boolean) => {
     let notebookId = "";
@@ -228,6 +230,67 @@ export const getSavePath = (pathString: string, notebookId: string, cb: (p: stri
                 cb(getDisplayName(response.data, false, true), data.data.box);
             });
         }
+    });
+};
+
+export const newFolder = (options: {
+    notebookId: string,
+    currentPath: string,
+    listDocTree?: boolean,
+}) => {
+    if (window.siyuan.config.readonly) {
+        return;
+    }
+
+    const dialog = new Dialog({
+        title: window.siyuan.languages.new + " " + window.siyuan.languages.folder,
+        content: `<div class="b3-dialog__content"><input class="b3-text-field fn__block" value=""></div>
+<div class="b3-dialog__action">
+    <button class="b3-button b3-button--cancel">${window.siyuan.languages.cancel}</button><div class="fn__space"></div>
+    <button class="b3-button b3-button--text">${window.siyuan.languages.confirm}</button>
+</div>`,
+        width: isMobile() ? "92vw" : "520px",
+    });
+
+    const inputElement = dialog.element.querySelector("input") as HTMLInputElement;
+    const btnsElement = dialog.element.querySelectorAll(".b3-button");
+    dialog.bindInput(inputElement, () => {
+        (btnsElement[1] as HTMLButtonElement).click();
+    });
+    inputElement.value = window.siyuan.languages.folder;
+    inputElement.focus();
+    inputElement.select();
+
+    btnsElement[0].addEventListener("click", () => {
+        dialog.destroy();
+    });
+
+    btnsElement[1].addEventListener("click", () => {
+        const rawName = inputElement.value.trim();
+        const folderName = replaceFileName(rawName || window.siyuan.languages.folder);
+        if (!validateName(folderName, inputElement)) {
+            return;
+        }
+
+        const folderId = Lute.NewNodeID();
+        const folderPath = pathPosix().join(getDisplayName(options.currentPath, false, true), folderId + ".sy");
+        fetchPost("/api/filetree/createDoc", {
+            notebook: options.notebookId,
+            path: folderPath,
+            title: folderName,
+            md: "",
+            listDocTree: options.listDocTree,
+        }, (response) => {
+            const createdId = response?.data?.id || folderId;
+            fetchPost("/api/attr/setBlockAttrs", {
+                id: createdId,
+                attrs: {
+                    icon: "icon:iconFolder",
+                }
+            });
+        });
+
+        dialog.destroy();
     });
 };
 

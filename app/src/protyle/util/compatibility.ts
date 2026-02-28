@@ -499,9 +499,9 @@ export const getLocalStorage = (cb: () => void) => {
             id: "",
         };
         defaultStorage[Constants.LOCAL_IMAGES] = {
-            file: "1f4c4",
+            file: "icon:iconFile",
             note: "1f5c3",
-            folder: "1f4d1"
+            folder: "icon:iconFolder"
         };
         defaultStorage[Constants.LOCAL_EMOJIS] = {
             currentTab: "emoji"
@@ -551,6 +551,12 @@ export const getLocalStorage = (cb: () => void) => {
                 window.siyuan.storage[key] = defaultStorage[key];
             }
         });
+        if (window.siyuan.storage[Constants.LOCAL_IMAGES].file === "1f4c4") {
+            window.siyuan.storage[Constants.LOCAL_IMAGES].file = "icon:iconFile";
+        }
+        if (window.siyuan.storage[Constants.LOCAL_IMAGES].folder === "1f4d1") {
+            window.siyuan.storage[Constants.LOCAL_IMAGES].folder = "icon:iconFolder";
+        }
         // 搜索数据添加 replaceTypes 兼容
         if (!window.siyuan.storage[Constants.LOCAL_SEARCHDATA].replaceTypes ||
             Object.keys(window.siyuan.storage[Constants.LOCAL_SEARCHDATA].replaceTypes).length === 0) {
