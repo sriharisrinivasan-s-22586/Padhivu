@@ -42,6 +42,7 @@ export abstract class Constants {
     public static readonly SIYUAN_QUIT: string = "siyuan-quit";
     public static readonly SIYUAN_HOTKEY: string = "siyuan-hotkey";
     public static readonly SIYUAN_INIT: string = "siyuan-init";
+    public static readonly SIYUAN_READY_TO_SHOW: string = "siyuan-ready-to-show";
     public static readonly SIYUAN_SEND_WINDOWS: string = "siyuan-send-windows"; // 主窗口和各新窗口之间的通信，{cmd: "closetab"|"lockscreen"|"lockscreenByMode", data: {}})
     public static readonly SIYUAN_SAVE_CLOSE: string = "siyuan-save-close";
     public static readonly SIYUAN_AUTO_LAUNCH: string = "siyuan-auto-launch";
@@ -61,11 +62,12 @@ export abstract class Constants {
     public static readonly SIYUAN_SHOW_WINDOW: string = "siyuan-show-window";
 
     // custom
+    public static readonly CUSTOM_REMINDER_WECHAT: string = "custom-reminder-wechat";
+    public static readonly CUSTOM_RIFF_DECKS: string = "custom-riff-decks";
     public static readonly CUSTOM_SY_READONLY: string = "custom-sy-readonly";
     public static readonly CUSTOM_SY_FULLWIDTH: string = "custom-sy-fullwidth";
     public static readonly CUSTOM_SY_AV_VIEW: string = "custom-sy-av-view";
-    public static readonly CUSTOM_REMINDER_WECHAT: string = "custom-reminder-wechat";
-    public static readonly CUSTOM_RIFF_DECKS: string = "custom-riff-decks";
+    public static readonly CUSTOM_SY_TITLE_EMPTY: string = "custom-sy-title-empty";
 
     // size
     public static readonly SIZE_DATABASE_MAZ_SIZE: number = 102400;
@@ -120,7 +122,6 @@ export abstract class Constants {
 
     // ws callback
     public static readonly CB_MOVE_NOLIST = "cb-move-nolist";
-    public static readonly CB_MOUNT_REMOVE = "cb-mount-remove";
     public static readonly CB_GET_APPEND = "cb-get-append"; // 向下滚动加载
     public static readonly CB_GET_BEFORE = "cb-get-before"; // 向上滚动加载
     public static readonly CB_GET_UNCHANGEID = "cb-get-unchangeid"; // 上下滚动，定位时不修改 blockid
@@ -139,6 +140,7 @@ export abstract class Constants {
     public static readonly CB_GET_HTML = "cb-get-html"; // 直接渲染，不需要再 /api/block/getDocInfo，否则搜索表格无法定位
     public static readonly CB_GET_HISTORY = "cb-get-history"; // 历史渲染
     public static readonly CB_GET_OPENNEW = "cb-get-opennew"; // 编辑器只读后新建文件需为临时解锁状态 & https://github.com/siyuan-note/siyuan/issues/12197
+    public static readonly CB_GET_AV_NO_CREATE = "cb-get-av-no-create"; // 属性视图不自动创建
 
     // localstorage
     public static readonly LOCAL_ZOOM = "local-zoom";
@@ -238,6 +240,7 @@ export abstract class Constants {
     public static readonly MENU_BAR_MORE = "barmore"; // 顶栏更多菜单
     public static readonly MENU_STATUS_HELP = "statusHelp"; // 状态栏帮助菜单
     public static readonly MENU_STATUS_BACKGROUND_TASK = "statusBackgroundTask"; // 状态栏后台任务菜单
+    public static readonly MENU_DOCK = "menu-dock"; // 桌面端 dock 图标菜单
     public static readonly MENU_DOCK_MOBILE = "dockMobileMenu"; // 移动端侧栏插件选项菜单
 
     public static readonly MENU_BLOCK_SINGLE = "block-single"; // 单选块菜单

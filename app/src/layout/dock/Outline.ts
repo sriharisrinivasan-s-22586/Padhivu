@@ -73,7 +73,8 @@ export class Outline extends Model {
                                 }, -1);
                             }
                             break;
-                        case "unmount":
+                        case "closeBox":
+                        case "removeBox":
                             if (this.type === "local") {
                                 fetchPost("/api/block/checkBlockExist", {id: this.blockId}, existResponse => {
                                     if (!existResponse.data) {
@@ -566,12 +567,16 @@ export class Outline extends Model {
         if (!nodeElement) {
             return;
         }
-        if (nodeElement.getAttribute("data-type") === "NodeHeading") {
+        if (nodeElement.getAttribute("data-type") === "NodeHeading" &&
+            !hasClosestByClassName(nodeElement, "bq") &&
+            !hasClosestByClassName(nodeElement, "callout-content")) {
             this.setCurrentById(nodeElement.getAttribute("data-node-id"));
         } else {
             let previousElement = getPreviousBlock(nodeElement);
             while (previousElement) {
-                if (previousElement.getAttribute("data-type") === "NodeHeading") {
+                if (previousElement.getAttribute("data-type") === "NodeHeading" &&
+                    !hasClosestByClassName(previousElement, "bq") &&
+                    !hasClosestByClassName(previousElement, "callout-content")) {
                     break;
                 } else {
                     previousElement = getPreviousBlock(previousElement);

@@ -113,7 +113,8 @@ class App {
                                     }
                                 });
                                 break;
-                            case "unmount":
+                            case "closeBox":
+                            case "removeBox":
                                 getAllTabs().forEach((tab) => {
                                     if (tab.headElement) {
                                         const initTab = tab.headElement.getAttribute("data-initdata");
@@ -180,7 +181,7 @@ class App {
                     fetchPost("/api/setting/getCloudUser", {}, userResponse => {
                         window.siyuan.user = userResponse.data;
                         init(this);
-                        setTitle(window.siyuan.languages.siyuanNote);
+                        setTitle("", true);
                         initMessage();
                     });
                 });

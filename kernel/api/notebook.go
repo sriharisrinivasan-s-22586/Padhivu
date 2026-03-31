@@ -145,11 +145,10 @@ func removeNotebook(c *gin.Context) {
 		return
 	}
 
-	evt := util.NewCmdResult("unmount", 0, util.PushModeBroadcast)
+	evt := util.NewCmdResult("removeBox", 0, util.PushModeBroadcast)
 	evt.Data = map[string]interface{}{
 		"box": notebook,
 	}
-	evt.Callback = arg["callback"]
 	util.PushEvent(evt)
 }
 
@@ -418,6 +417,31 @@ func lsNotebooks(c *gin.Context) {
 		notebooks, err = model.ListNotebooks()
 		if err != nil {
 			return
+		}
+		if model.IsReadOnlyRoleContext(c) {
+			publishAccess := model.GetPublishAccess()
+			tempNotebooks := []*model.Box{}
+			for _, notebook := range notebooks {
+				// 筛除关闭的笔记本
+				if notebook.Closed {
+					continue
+				}
+				// 筛除发布不可见的笔记本
+				invisible := false
+				for _, item := range publishAccess {
+					if item.ID == notebook.ID {
+						if !item.Visible {
+							invisible = true
+						}
+						break
+					}
+				}
+				if invisible {
+					continue
+				}
+				tempNotebooks = append(tempNotebooks, notebook)
+			}
+			notebooks = tempNotebooks
 		}
 	}
 

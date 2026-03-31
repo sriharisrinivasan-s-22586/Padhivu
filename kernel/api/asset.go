@@ -52,14 +52,8 @@ func statAsset(c *gin.Context) {
 			return
 		}
 
-	} else if strings.HasPrefix(path, "file://") {
-		p = strings.TrimPrefix(path, "file://")
-		if strings.Contains(p, ":") {
-			p = strings.TrimPrefix(p, "/")
-		}
-		if strings.Contains(p, "?") {
-			p = p[:strings.Index(p, "?")]
-		}
+	} else if localPath := util.FileURLToLocalPath(path); localPath != "" {
+		p = localPath
 	} else {
 		ret.Code = 1
 		return
@@ -219,6 +213,14 @@ func getDocImageAssets(c *gin.Context) {
 		ret.Msg = err.Error()
 		return
 	}
+	if model.IsReadOnlyRoleContext(c) {
+		publishAccess := model.GetPublishAccess()
+		if !model.CheckBlockIdAccessableByPublishAccess(c, publishAccess, id) {
+			ret.Code = -1
+			ret.Msg = fmt.Sprintf(model.Conf.Language(15), id)
+			return
+		}
+	}
 	ret.Data = assets
 }
 
@@ -237,6 +239,14 @@ func getDocAssets(c *gin.Context) {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		return
+	}
+	if model.IsReadOnlyRoleContext(c) {
+		publishAccess := model.GetPublishAccess()
+		if !model.CheckBlockIdAccessableByPublishAccess(c, publishAccess, id) {
+			ret.Code = -1
+			ret.Msg = fmt.Sprintf(model.Conf.Language(15), id)
+			return
+		}
 	}
 	ret.Data = assets
 }
@@ -423,7 +433,7 @@ func uploadCloudByAssetsPaths(c *gin.Context) {
 
 	if nil == arg["paths"] {
 		ret.Code = -1
-		ret.Msg = "paths is required"
+		ret.Msg = "[paths] is required"
 		return
 	}
 

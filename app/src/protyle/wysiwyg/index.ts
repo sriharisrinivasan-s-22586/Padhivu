@@ -101,6 +101,7 @@ import {hideTooltip} from "../../dialog/tooltip";
 import {openGalleryItemMenu} from "../render/av/gallery/util";
 import {clearSelect} from "../util/clear";
 import {chartRender} from "../render/chartRender";
+import {reloadProtyle} from "../util/reload";
 import {updateCalloutType} from "./callout";
 import {nbsp2space, removeZWJ} from "../util/normalizeText";
 
@@ -2616,7 +2617,6 @@ export class WYSIWYG {
                     event
                 });
             });
-            hideElements(["hint", "util"], protyle);
             const ctrlIsPressed = isOnlyMeta(event);
             const backlinkBreadcrumbItemElement = hasClosestByClassName(event.target, "protyle-breadcrumb__item");
             if (backlinkBreadcrumbItemElement) {
@@ -2852,6 +2852,36 @@ export class WYSIWYG {
                 });
                 /// #endif
                 return;
+            }
+
+            if (window.siyuan.isPublish) {
+                const passwordButtonElement = hasClosestByClassName(event.target, "protyle-password__button");
+                if (passwordButtonElement) {
+                    fetchPost("/api/filetree/authFilePublishAccess", {
+                        id: passwordButtonElement.parentElement.parentElement.getAttribute("data-node-id"),
+                        password: passwordButtonElement.parentElement.querySelector("input").value
+                    }, (response) => {
+                        if (response.msg) {
+                            showMessage(response.msg);
+                        } else {
+                            reloadProtyle(protyle, true);
+                            /// #if !MOBILE
+                            getAllModels().outline.forEach(item => {
+                                if (item.blockId === protyle.block.rootID) {
+                                    fetchPost("/api/outline/getDocOutline", {
+                                        id: item.blockId,
+                                        preview: item.isPreview
+                                    }, response => {
+                                        item.update(response);
+                                    });
+                                }
+                            });
+                            /// #endif
+                        }
+                    });
+                    event.stopPropagation();
+                    return;
+                }
             }
 
             const embedItemElement = hasClosestByClassName(event.target, "protyle-wysiwyg__embed");

@@ -247,7 +247,8 @@ func SanitizeSVG(svgInput string) string {
 			next := c.NextSibling
 			if c.Type == html.ElementNode {
 				tag := strings.ToLower(c.Data)
-				if tag == "script" || tag == "iframe" || tag == "object" || tag == "embed" || tag == "foreignobject" {
+				if tag == "script" || tag == "iframe" || tag == "object" || tag == "embed" || tag == "foreignobject" || "animate" == tag ||
+					"animatetransform" == tag || "animatecolor" == tag || "animatemotion" == tag || "set" == tag {
 					n.RemoveChild(c)
 					c = next
 					continue
@@ -260,10 +261,23 @@ func SanitizeSVG(svgInput string) string {
 					for _, a := range c.Attr {
 						key := strings.ToLower(a.Key)
 						val := strings.TrimSpace(strings.ToLower(a.Val))
+						val = strings.Map(func(r rune) rune {
+							if r == '\t' || r == '\n' || r == '\r' {
+								return -1 // Remove character
+							}
+							return r
+						}, val)
 
 						// 删除事件处理器属性（onload, onerror 等）
 						if strings.HasPrefix(key, "on") {
 							continue
+						}
+
+						if key == "values" || key == "from" || key == "to" {
+							// 删除 animate* 元素的 values、from、to 属性以防止恶意动画
+							if strings.Contains(val, "javascript:") {
+								continue
+							}
 						}
 
 						// 删除 href 或 xlink:href 指向 javascript: 或某些不安全的 data: URI
@@ -271,9 +285,13 @@ func SanitizeSVG(svgInput string) string {
 							if strings.HasPrefix(val, "javascript:") {
 								continue
 							}
-							// 对 data: 做保守处理，删除包含可执行内容的 data:text/html 或 data:image/svg+xml
+							// 对 data: 做保守处理，只允许常见安全的图片格式（png/jpeg/gif/webp）
 							if strings.HasPrefix(val, "data:") {
-								if strings.Contains(val, "text/html") || strings.Contains(val, "image/svg+xml") || strings.Contains(val, "application/xhtml+xml") {
+								safe := strings.HasPrefix(val, "data:image/png") ||
+									strings.HasPrefix(val, "data:image/jpeg") ||
+									strings.HasPrefix(val, "data:image/gif") ||
+									strings.HasPrefix(val, "data:image/webp")
+								if !safe {
 									continue
 								}
 							}

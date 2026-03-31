@@ -704,11 +704,15 @@ func getSyncIgnoreLines() (ret []string) {
 	dataStr = strings.ReplaceAll(dataStr, "\r\n", "\n")
 	ret = strings.Split(dataStr, "\n")
 
-	// 默认忽略帮助文档
+	// 忽略用户指南
 	ret = append(ret, "20210808180117-6v0mkxr/**/*")
 	ret = append(ret, "20210808180117-czj9bvb/**/*")
 	ret = append(ret, "20211226090932-5lcq56f/**/*")
 	ret = append(ret, "20240530133126-axarxgx/**/*")
+	// 忽略用户指南的数据库 JSON 文件
+	for _, avName := range getAllUserGuideAVJSONFiles() {
+		ret = append(ret, "/storage/av/"+avName)
+	}
 
 	ret = gulu.Str.RemoveDuplicatedElem(ret)
 	return
@@ -728,18 +732,15 @@ func planSyncAfter(d time.Duration) {
 func isProviderOnline(byHand bool) (ret bool) {
 	var checkURL string
 	skipTlsVerify := false
-	timeout := 3000
 	switch Conf.Sync.Provider {
 	case conf.ProviderSiYuan:
 		checkURL = util.GetCloudSyncServer()
 	case conf.ProviderS3:
 		checkURL = Conf.Sync.S3.Endpoint
 		skipTlsVerify = Conf.Sync.S3.SkipTlsVerify
-		timeout = Conf.Sync.S3.Timeout * 1000
 	case conf.ProviderWebDAV:
 		checkURL = Conf.Sync.WebDAV.Endpoint
 		skipTlsVerify = Conf.Sync.WebDAV.SkipTlsVerify
-		timeout = Conf.Sync.WebDAV.Timeout * 1000
 	case conf.ProviderLocal:
 		checkURL = "file://" + Conf.Sync.Local.Endpoint
 		timeout = Conf.Sync.Local.Timeout * 1000
@@ -751,7 +752,7 @@ func isProviderOnline(byHand bool) (ret bool) {
 		return false
 	}
 
-	if ret = util.IsOnline(checkURL, skipTlsVerify, timeout); !ret {
+	if ret = util.IsOnline(checkURL, skipTlsVerify, 7000); !ret {
 		if 1 > autoSyncErrCount || byHand {
 			util.PushErrMsg(Conf.Language(76)+" (Provider: "+conf.ProviderToStr(Conf.Sync.Provider)+")", 5000)
 		}

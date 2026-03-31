@@ -147,6 +147,20 @@ func RemoveBox(boxID string) (err error) {
 	if err = filelock.Remove(localPath); err != nil {
 		return
 	}
+
+	if isUserGuide {
+		if avFiles, readAvErr := getUserGuideAVJSONFiles(boxID); nil == readAvErr {
+			for _, avName := range avFiles {
+				avFilePath := filepath.Join(util.DataDir, "storage", "av", avName)
+				if removeErr := filelock.Remove(avFilePath); nil != removeErr {
+					logging.LogErrorf("remove av file [%s] failed: %s", avFilePath, removeErr)
+				} else {
+					logging.LogInfof("removed av file [%s]", avFilePath)
+				}
+			}
+		}
+	}
+
 	IncSync()
 
 	logging.LogInfof("removed box [%s]", boxID)
@@ -157,8 +171,17 @@ func Unmount(boxID string) {
 	FlushTxQueue()
 
 	unmount0(boxID)
-	evt := util.NewCmdResult("unmount", 0, util.PushModeBroadcast)
-	evt.Data = map[string]interface{}{
+
+	cmdName := "closeBox"
+	if IsUserGuide(boxID) {
+		if err := RemoveBox(boxID); err == nil {
+			cmdName = "removeBox"
+		} else {
+			logging.LogErrorf("close user guide box [%s] failed, fallback to unmount: %s", boxID, err)
+		}
+	}
+	evt := util.NewCmdResult(cmdName, 0, util.PushModeBroadcast)
+	evt.Data = map[string]any{
 		"box": boxID,
 	}
 	util.PushEvent(evt)
@@ -270,4 +293,49 @@ func Mount(boxID string) (alreadyMount bool, err error) {
 
 func IsUserGuide(boxID string) bool {
 	return "20210808180117-czj9bvb" == boxID || "20210808180117-6v0mkxr" == boxID || "20211226090932-5lcq56f" == boxID || "20240530133126-axarxgx" == boxID
+}
+
+func getUserGuideAVJSONFiles(boxID string) (ret []string, err error) {
+	guideAVDirPath := filepath.Join(util.WorkingDir, "guide", boxID, "storage", "av")
+	if !filelock.IsExist(guideAVDirPath) {
+		logging.LogErrorf("guide av dir [%s] not exist", guideAVDirPath)
+		return
+	}
+
+	avEntries, err := os.ReadDir(guideAVDirPath)
+	if nil != err {
+		logging.LogErrorf("read guide av dir [%s] failed: %s", guideAVDirPath, err)
+		return
+	}
+
+	for _, avEntry := range avEntries {
+		avName := avEntry.Name()
+		if avEntry.IsDir() || !strings.HasSuffix(avName, ".json") || !ast.IsNodeIDPattern(strings.TrimSuffix(avName, ".json")) {
+			continue
+		}
+		ret = append(ret, avName)
+	}
+	return
+}
+
+func getAllUserGuideAVJSONFiles() (ret []string) {
+	guideDirPath := filepath.Join(util.WorkingDir, "guide")
+	guideEntries, err := os.ReadDir(guideDirPath)
+	if nil != err {
+		return
+	}
+
+	for _, guideEntry := range guideEntries {
+		boxID := guideEntry.Name()
+		if !guideEntry.IsDir() || !IsUserGuide(boxID) {
+			continue
+		}
+
+		avFiles, err := getUserGuideAVJSONFiles(boxID)
+		if nil != err {
+			continue
+		}
+		ret = append(ret, avFiles...)
+	}
+	return
 }

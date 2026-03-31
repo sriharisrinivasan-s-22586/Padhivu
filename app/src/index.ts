@@ -35,6 +35,8 @@ import {reloadEmoji} from "./emoji";
 import {processIOSPurchaseResponse} from "./util/iOSPurchase";
 /// #if BROWSER
 import {setLocalShorthandCount} from "./util/noRelyPCFunction";
+/// #else
+import {ipcRenderer} from "electron";
 /// #endif
 import {getDockByType} from "./layout/tabUtil";
 import {Tag} from "./layout/dock/Tag";
@@ -158,7 +160,8 @@ export class App {
                                     }
                                 });
                                 break;
-                            case "unmount":
+                            case "closeBox":
+                            case "removeBox":
                                 getAllTabs().forEach((tab) => {
                                     if (tab.headElement) {
                                         const initTab = tab.headElement.getAttribute("data-initdata");
@@ -210,7 +213,7 @@ export class App {
                                 openFileById({app: this, id: data.data.id, action: [Constants.CB_GET_FOCUS]});
                                 break;
                             case "exit":
-                                if (isBrowser()) {
+                                if (isBrowser() && !isInMobileApp()) {
                                     window.location.href = "about:blank";
                                 }
                         }
@@ -236,7 +239,7 @@ export class App {
                         onGetConfig(response.data.start, this);
                         account.onSetaccount();
                         rebrandLegacyTabTitles();
-                        setTitle(window.siyuan.languages.siyuanNote);
+                        setTitle("", true);
                         initMessage();
                         /// #if BROWSER && !MOBILE
                         if (!isInMobileApp() && !window.siyuan.config.readonly && !window.siyuan.isPublish && !isChromeBrowser()) {
@@ -273,4 +276,6 @@ window.showKeyboardToolbar = () => {
     // 防止 Pad 端报错
 };
 window.processIOSPurchaseResponse = processIOSPurchaseResponse;
+/// #else
+ipcRenderer.send(Constants.SIYUAN_READY_TO_SHOW);
 /// #endif

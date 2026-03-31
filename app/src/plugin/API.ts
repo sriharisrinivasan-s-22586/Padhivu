@@ -10,7 +10,7 @@ import {openNewWindow, openNewWindowById} from "../window/openNewWindow";
 import {Tab} from "../layout/Tab";
 /// #endif
 import {updateHotkeyTip} from "../protyle/util/compatibility";
-import * as platformUtils from "../protyle/util/compatibility";
+import * as platformUtils from "./platformUtils";
 import {App} from "../index";
 import {Constants} from "../constants";
 import {Setting} from "./Setting";
@@ -21,7 +21,7 @@ import {lockScreen, exitSiYuan} from "../dialog/processSystem";
 import {Model} from "../layout/Model";
 import {getActiveTab, getDockByType} from "../layout/tabUtil";
 /// #if !MOBILE
-import {getAllModels} from "../layout/getAll";
+import {getAllModels, getAllTabs} from "../layout/getAll";
 /// #endif
 import {getAllEditor} from "../layout/getAll";
 import {openSetting} from "../config";
@@ -310,13 +310,15 @@ const openEmoji = (options: {
     position: IPosition,
     selectedCB?: (emoji: string) => void,
     dynamicIconURL?: string
+    hideDynamicIcon?: boolean
+    hideCustomIcon?: boolean
 }) => {
     let dynamicImgElement: HTMLImageElement;
     if (options.dynamicIconURL) {
         dynamicImgElement = document.createElement("img");
         dynamicImgElement.src = options.dynamicIconURL;
     }
-    openEmojiPanel("", "av", options.position, options.selectedCB, dynamicImgElement);
+    openEmojiPanel("", "av", options.position, options.selectedCB, dynamicImgElement,  {dynamic: options.hideDynamicIcon, custom: options.hideCustomIcon});
 };
 
 export const API = {
@@ -346,6 +348,7 @@ export const API = {
     /// #if !MOBILE
     getActiveTab,
     getAllModels,
+    getAllTabs,
     /// #endif
     getActiveEditor,
     platformUtils,

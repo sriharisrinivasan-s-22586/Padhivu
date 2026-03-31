@@ -129,6 +129,7 @@ type TAVFilterOperator =
     | "Is false"
 
 type TRecentDocsSort = "viewedAt" | "closedAt" | "openAt" | "updated"
+type TPublishAccessLevel = "public" | "protected" | "hidden" | "private" | "forbidden";
 
 declare module "blueimp-md5"
 
@@ -221,6 +222,7 @@ interface Window {
     };
     pdfjsLib: any;
     webkit: {
+        nativeCallbacks: { [key: string]: (id: number) => void },
         messageHandlers: {
             openLink: { postMessage: (url: string) => void }
             startKernelFast: { postMessage: (url: string) => void }
@@ -229,6 +231,15 @@ interface Window {
             purchase: { postMessage: (url: string) => void }
             print: { postMessage: (html: string) => void }
             exit: { postMessage: (text: string) => void }
+            sendNotification: {
+                postMessage: (options: {
+                    title: string,
+                    body: string,
+                    delay: number,
+                    callback: string
+                }) => number
+            }
+            cancelNotification: { postMessage: (id: number) => void }
         }
     };
     htmlToImage: {
@@ -255,7 +266,8 @@ interface Window {
         getScreenWidthPx(): number
         exit(): void
         setWebViewFocusable(enable: boolean): void
-        sendNotification(title: string, body: string, delayInSeconds: number): void
+        sendNotification(channel: string, title: string, body: string, delayInSeconds: number): number
+        cancelNotification(id: number): void
     };
     JSHarmony: {
         showKeyboard(): void
@@ -274,6 +286,8 @@ interface Window {
         getScreenWidthPx(): number
         exit(): void
         setWebViewFocusable(enable: boolean): void
+        sendNotification(channel: string, title: string, body: string, delayInSeconds: number): number
+        cancelNotification(id: number): void
     };
 
     Protyle: import("../protyle/method").default;
@@ -865,8 +879,6 @@ interface IMenu {
 }
 
 interface IBazaarItem {
-    incompatible?: boolean;  // 仅 plugin
-    enabled: boolean;
     preferredName: string;
     minAppVersion: string;
     preferredDesc: string;
@@ -882,13 +894,11 @@ interface IBazaarItem {
     outdated: false;
     name: string;
     previewURL: string;
-    previewURLThumb: string;
     repoHash: string;
     repoURL: string;
     url: string;
     openIssues: number;
     version: string;
-    modes: string[];
     hSize: string;
     hInstallSize: string;
     hInstallDate: string;
@@ -896,6 +906,9 @@ interface IBazaarItem {
     preferredFunding: string;
     disallowUpdate: boolean;
     updateRequiredMinAppVer: string;
+    incompatible?: boolean;  // 仅 plugin
+    enabled?: boolean;       // 仅 plugin
+    modes?: string[];        // 仅 theme
 }
 
 interface IAV {
@@ -1134,4 +1147,12 @@ interface IAVCellRollupValue {
 interface IAVCalc {
     operator?: string,
     result?: IAVCellValue
+}
+
+interface IPublishAccessItem {
+    id: string,
+    visible: boolean,
+    password: string,
+    disable: boolean
+    iconHTML?: string
 }

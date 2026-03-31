@@ -650,22 +650,7 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
                 position.end -= 1;
 
             }
-            // 需使用 innerText 否则表格内 br 无法传唤为 /n
-            if (event.key === "ArrowDown" && nodeEditableElement?.innerText.trimRight().substr(position.start).indexOf("\n") === -1 && (
-                (tdElement && tdStatus === "last" && nodeType === "NodeTable" && !getNextBlock(nodeElement)) ||
-                (nodeType === "NodeCodeBlock" && !getNextBlock(nodeElement)) ||
-                (nodeElement.parentElement.getAttribute("data-type") === "NodeBlockquote" && nodeElement.nextElementSibling.classList.contains("protyle-attr") && !getNextBlock(nodeElement.parentElement)) ||
-                (nodeElement.parentElement.classList.contains("callout-content") && !nodeElement.nextElementSibling && !getNextBlock(nodeElement.parentElement.parentElement))
-            )) {
-                // 跳出代码块和bq
-                if (nodeElement.parentElement.getAttribute("data-type") === "NodeBlockquote") {
-                    insertEmptyBlock(protyle, "afterend", nodeElement.parentElement.getAttribute("data-node-id"));
-                } else if (nodeElement.parentElement.classList.contains("callout-content")) {
-                    insertEmptyBlock(protyle, "afterend", nodeElement.parentElement.parentElement.getAttribute("data-node-id"));
-                } else {
-                    insertEmptyBlock(protyle, "afterend", nodeElement.getAttribute("data-node-id"));
-                }
-            } else if (event.key === "ArrowUp") {
+            if (event.key === "ArrowUp") {
                 const firstEditElement = getContenteditableElement(protyle.wysiwyg.element.firstElementChild);
                 if ((
                         !getPreviousBlock(nodeElement) &&  // 列表第一个块为嵌入块，第二个块为段落块，上键应选中第一个块 https://ld246.com/article/1652667912155
@@ -726,13 +711,13 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
                         }
                     }
                 }
-            } else if (selectText === "" && (event.key === "ArrowDown" || event.key === "ArrowRight") && nodeElement === getLastBlock(protyle.wysiwyg.element.lastElementChild) &&
-                // 表格无法右移动 https://ld246.com/article/1631434502215
-                !hasClosestByTag(range.startContainer, "TD") && !hasClosestByTag(range.startContainer, "TH")) {
-                // 页面按向下/右箭头丢失焦点 https://ld246.com/article/1629954026096
+            } else if (selectText === "" && (event.key === "ArrowDown" || event.key === "ArrowRight") &&
+                nodeElement === getLastBlock(protyle.wysiwyg.element.lastElementChild)) {
+                // 末尾按向下/右箭头丢失焦点 https://ld246.com/article/1629954026096
                 const lastEditElement = getContenteditableElement(nodeElement);
                 // 代码块需替换最后一个 /n  https://github.com/siyuan-note/siyuan/issues/3221
-                if (lastEditElement && !lastEditElement.querySelector(".emoji") && lastEditElement.textContent.replace(/\n$/, "").length <= getSelectionOffset(lastEditElement, undefined, range).end) {
+                if (lastEditElement && !lastEditElement.querySelector(".emoji") &&
+                    lastEditElement.textContent.replace(/\n$/, "").length <= getSelectionOffset(lastEditElement, undefined, range).end) {
                     event.stopPropagation();
                     event.preventDefault();
                     focusByRange(range);
@@ -747,8 +732,19 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
                 }
             }
             if (event.key === "ArrowDown") {
-                if (nodeEditableElement?.innerText.trimRight().substr(position.start).indexOf("\n") === -1 &&
-                    nodeElement === protyle.wysiwyg.element.lastElementChild && !tdElement) {
+                const nextElement = getNextBlock(nodeElement);
+                // 末尾块/单元格统一移动到末尾 https://github.com/siyuan-note/siyuan/issues/17116
+                if (tdElement && tdStatus === "last" && nodeType === "NodeTable" && !nextElement &&
+                    // 需使用 innerText 否则表格内 br 无法转换为 /n
+                    nodeEditableElement?.innerText.trimRight().substr(position.start).indexOf("\n") === -1) {
+                    setLastNodeRange(nodeEditableElement, range, false);
+                    range.collapse(false);
+                    event.stopPropagation();
+                    event.preventDefault();
+                    return;
+                }
+                if (!nextElement && !tdElement &&
+                    nodeEditableElement?.innerText.trimRight().substr(position.start).indexOf("\n") === -1) {
                     setLastNodeRange(getContenteditableElement(nodeEditableElement), range, false);
                     range.collapse(false);
                     event.stopPropagation();
@@ -774,7 +770,6 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
                 } else if (nodeEditableElement?.innerText.substr(position.end).indexOf("\n") === -1 || position.end >= nodeEditableElement.innerText.trimEnd().length) {
                     // 需使用 innerText，否则 td 中的 br 无法转换为 \n; position.end 不能加1，否则倒数第二行行末无法下移
                     range.collapse(false);
-                    const nextElement = getNextBlock(nodeElement) as HTMLElement;
                     if (nextElement &&
                         (nextElement.getAttribute("fold") === "1" || nextElement.classList.contains("code-block")) &&
                         nodeEditableElement.getBoundingClientRect().bottom - getSelectionPosition(nodeElement, range).top < 40) {
@@ -895,7 +890,7 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
                             return;
                         }
                     }
-                    // 需使用 innerText，否则 br 无法传唤为 /n https://github.com/siyuan-note/siyuan/issues/12066
+                    // 需使用 innerText，否则 br 无法转换为 /n https://github.com/siyuan-note/siyuan/issues/12066
                     // 段末反向删除 https://github.com/siyuan-note/insider/issues/274
                     if (isEndOfBlock(range) || editElement.textContent.substring(position.start) === "\n") {
                         const cloneRange = range.cloneRange();
@@ -1221,6 +1216,7 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
                         notebookId: protyle.notebookId,
                         path: protyle.path,
                         name: response.data.ial.title,
+                        empty: response.data.ial[Constants.CUSTOM_SY_TITLE_EMPTY] === "true",
                         range,
                         type: "file",
                     });
@@ -1884,7 +1880,7 @@ export const keydown = (protyle: IProtyle, editorElement: HTMLElement) => {
                 return;
             }
             if (!event.shiftKey) {
-                document.execCommand("insertText", false, window.siyuan.config.editor.codeTabSpaces === 0 ? "\t" : "".padStart(window.siyuan.config.editor.codeTabSpaces, " "));
+                document.execCommand("insertHTML", false, window.siyuan.config.editor.codeTabSpaces === 0 ? "\t" : "".padStart(window.siyuan.config.editor.codeTabSpaces, " "));
                 return true;
             }
         }
