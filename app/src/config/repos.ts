@@ -6,8 +6,10 @@ import {processSync} from "../dialog/processSystem";
 import {getCloudURL} from "./util/about";
 import {openByMobile} from "../protyle/util/compatibility";
 import {confirmDialog} from "../dialog/confirmDialog";
+import {refreshLANDevices, renderLANProvider, saveLANProvider, toggleLANModeFields} from "./reposLan";
 
 const renderProvider = (provider: number) => {
+    const providerNeedsPaid = provider !== 5;
     if (provider === 0) {
         if (needSubscribe("")) {
             return `<div class="b3-label b3-label--inner">${window.siyuan.config.system.container === "ios" ? window.siyuan.languages._kernel[122] : window.siyuan.languages._kernel[29].replaceAll("${accountServer}", getCloudURL(""))}</div>
@@ -39,7 +41,7 @@ const renderProvider = (provider: number) => {
     ${window.siyuan.languages.syncOfficialProviderIntro}
 </div>`;
     }
-    if (!isPaidUser()) {
+    if (providerNeedsPaid && !isPaidUser()) {
         return `<div>
     ${window.siyuan.languages["_kernel"][214].replaceAll("${accountServer}", getCloudURL(""))}
 </div>
@@ -209,6 +211,8 @@ const renderProvider = (provider: number) => {
     <div class="fn__space"></div>
     <input id="localConcurrentReqs" class="b3-text-field fn__block" type="number" min="1" max="1024" value="${window.siyuan.config.sync.local.concurrentReqs}">
 </div>`;
+    } else if (provider === 5) {
+        return renderLANProvider();
     }
     return "";
 };
@@ -402,9 +406,24 @@ const bindProviderEvent = () => {
                         window.siyuan.config.sync.local = local;
                     }
                 });
+            } else if (window.siyuan.config.sync.provider === 5) {
+                saveLANProvider(providerPanelElement, () => {
+                    refreshLANDevices(providerPanelElement);
+                });
             }
         });
     });
+    if (window.siyuan.config.sync.provider === 5) {
+        refreshLANDevices(providerPanelElement);
+        toggleLANModeFields(providerPanelElement);
+        const hostModeElement = providerPanelElement.querySelector("#lanServe") as HTMLInputElement;
+        hostModeElement?.addEventListener("change", () => {
+            toggleLANModeFields(providerPanelElement);
+            saveLANProvider(providerPanelElement, () => {
+                refreshLANDevices(providerPanelElement);
+            });
+        });
+    }
 };
 
 export const repos = {
@@ -425,6 +444,7 @@ export const repos = {
         <option value="2" ${window.siyuan.config.sync.provider === 2 ? "selected" : ""}>S3</option>
         <option value="3" ${window.siyuan.config.sync.provider === 3 ? "selected" : ""}>WebDAV</option>
         <option class="${!["std", "docker"].includes(window.siyuan.config.system.container) ? "fn__none" : ""}" value="4" ${window.siyuan.config.sync.provider === 4 ? "selected" : ""}>${window.siyuan.languages.localFileSystem}</option>
+        <option value="5" ${window.siyuan.config.sync.provider === 5 ? "selected" : ""}>LAN Sync</option>
     </select>
 </div>
 <div id="syncProviderPanel" class="b3-label">
@@ -578,6 +598,9 @@ export const repos = {
                 }
                 repos.element.querySelector("#syncProviderPanel").innerHTML = renderProvider(window.siyuan.config.sync.provider);
                 bindProviderEvent();
+                if (window.siyuan.config.sync.provider === 5) {
+                    refreshLANDevices(repos.element.querySelector("#syncProviderPanel"));
+                }
                 syncConfigElement.innerHTML = "";
                 syncConfigElement.classList.add("fn__none");
                 if (window.siyuan.config.sync.mode !== 1 || window.siyuan.config.system.container === "docker" || window.siyuan.config.sync.provider !== 0) {
@@ -617,6 +640,9 @@ export const repos = {
                     fetchPost(target.getAttribute("data-type") === "s3" ? "/api/sync/exportSyncProviderS3" : "/api/sync/exportSyncProviderWebDAV", {}, response => {
                         openByMobile(response.data.zip);
                     });
+                    break;
+                } else if (action === "refreshLanDevices") {
+                    refreshLANDevices(repos.element.querySelector("#syncProviderPanel"));
                     break;
                 } else if (action === "purgeData") {
                     confirmDialog("♻️ " + window.siyuan.languages.cloudStoragePurge, `<div class="b3-typography">${window.siyuan.languages.cloudStoragePurgeConfirm}</div>`, () => {

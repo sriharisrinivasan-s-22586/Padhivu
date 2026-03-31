@@ -240,16 +240,6 @@ export class Files extends Model {
             let target = event.target as HTMLElement;
             while (target && !target.isEqualNode(this.element)) {
                 if (target.tagName === "LI" && !target.getAttribute("data-opening")) {
-                    const iconElement = target.querySelector(".b3-list-item__icon") as HTMLElement;
-                    if (this.isFolderIcon(iconElement)) {
-                        const ulElement = hasTopClosestByTag(target, "UL");
-                        if (ulElement) {
-                            this.getLeaf(target, ulElement.getAttribute("data-url"));
-                        }
-                        event.stopPropagation();
-                        event.preventDefault();
-                        break;
-                    }
                     target.setAttribute("data-opening", "true");
                     openFileById({
                         app: options.app,
@@ -399,13 +389,6 @@ export class Files extends Model {
                             this.lastSelectedElement = target;
                             this.setCurrent(target, false);
                             if (target.getAttribute("data-type") === "navigation-file") {
-                                const iconElement = target.querySelector(".b3-list-item__icon") as HTMLElement;
-                                if (this.isFolderIcon(iconElement)) {
-                                    this.getLeaf(target, notebookId);
-                                    event.stopPropagation();
-                                    event.preventDefault();
-                                    break;
-                                }
                                 // 更新最后点击的文档项
                                 needFocus = false;
                                 if (target.getAttribute("data-opening")) {

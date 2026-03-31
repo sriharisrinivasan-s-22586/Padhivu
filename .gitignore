@@ -39,3 +39,6 @@ yarn.lock
 
 # Workflows
 **/__pycache__
+
+# LLM Generated Files
+documentation/

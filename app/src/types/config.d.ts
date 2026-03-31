@@ -1453,6 +1453,7 @@ declare namespace Config {
          * - `2`: Object storage service compatible with S3 protocol
          * - `3`: Network storage service using WebDAV protocol
          * - `4`: Local file system
+         * - `5`: LAN sync host
          */
         provider: number;
         s3: ISyncS3;
@@ -1466,6 +1467,7 @@ declare namespace Config {
         synced: number;
         webdav: ISyncWebDAV;
         local: ISyncLocal;
+        lan: ISyncLAN;
     }
 
     /**
@@ -1559,6 +1561,17 @@ declare namespace Config {
         /**
          * Concurrent requests.
          */
+        concurrentReqs: number;
+    }
+
+    export interface ISyncLAN {
+        endpoint: string;
+        basePath: string;
+        authToken: string;
+        deviceID: string;
+        deviceName: string;
+        serve: boolean;
+        timeout: number;
         concurrentReqs: number;
     }
 

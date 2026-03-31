@@ -256,16 +256,7 @@ export class MobileFiles extends Model {
                 } else if (target.tagName === "LI") {
                     this.setCurrent(target);
                     if (target.getAttribute("data-type") === "navigation-file") {
-                        const iconElement = target.querySelector(".b3-list-item__icon") as HTMLElement;
-                        if (this.isFolderIcon(iconElement)) {
-                            const ulElement = hasTopClosestByTag(target, "UL");
-                            if (ulElement) {
-                                const notebookId = ulElement.getAttribute("data-url");
-                                this.getLeaf(target, notebookId);
-                            }
-                        } else {
-                            openMobileFileById(app, target.getAttribute("data-node-id"), [Constants.CB_GET_SCROLL]);
-                        }
+                        openMobileFileById(app, target.getAttribute("data-node-id"), [Constants.CB_GET_SCROLL]);
                     } else if (target.getAttribute("data-type") === "navigation-root") {
                         const ulElement = hasTopClosestByTag(target, "UL");
                         if (ulElement) {

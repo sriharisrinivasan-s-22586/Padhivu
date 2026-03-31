@@ -433,6 +433,10 @@ func InitConf() {
 	Conf.Sync.Local.Endpoint = util.NormalizeLocalPath(Conf.Sync.Local.Endpoint)
 	Conf.Sync.Local.Timeout = util.NormalizeTimeout(Conf.Sync.Local.Timeout)
 	Conf.Sync.Local.ConcurrentReqs = util.NormalizeConcurrentReqs(Conf.Sync.Local.ConcurrentReqs, conf.ProviderLocal)
+	if nil == Conf.Sync.LAN {
+		Conf.Sync.LAN = conf.NewLAN()
+	}
+	initLANConf()
 
 	if util.ContainerDocker == util.Container {
 		Conf.Sync.Perception = false

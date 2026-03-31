@@ -85,7 +85,8 @@ const promiseTransaction = () => {
             promiseTransaction();
         }
         /// #if MOBILE
-        if (((0 !== window.siyuan.config.sync.provider && isPaidUser()) ||
+        if ((((0 !== window.siyuan.config.sync.provider && 5 !== window.siyuan.config.sync.provider) && isPaidUser()) ||
+                5 === window.siyuan.config.sync.provider ||
                 (0 === window.siyuan.config.sync.provider && !needSubscribe(""))) &&
             window.siyuan.config.repo.key && window.siyuan.config.sync.enabled) {
             document.getElementById("toolbarSync").classList.remove("fn__none");

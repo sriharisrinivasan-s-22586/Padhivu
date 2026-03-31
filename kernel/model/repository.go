@@ -798,6 +798,7 @@ func DownloadCloudSnapshot(tag, id string) (err error) {
 			util.PushErrMsg(Conf.Language(29), 5000)
 			return
 		}
+	case conf.ProviderLAN:
 	case conf.ProviderWebDAV, conf.ProviderS3, conf.ProviderLocal:
 		if !IsPaidUser() {
 			util.PushErrMsg(Conf.Language(214), 5000)
@@ -840,6 +841,7 @@ func UploadCloudSnapshot(tag, id string) (err error) {
 			util.PushErrMsg(Conf.Language(29), 5000)
 			return
 		}
+	case conf.ProviderLAN:
 	case conf.ProviderWebDAV, conf.ProviderS3, conf.ProviderLocal:
 		if !IsPaidUser() {
 			util.PushErrMsg(Conf.Language(214), 5000)
@@ -886,6 +888,7 @@ func RemoveCloudRepoTag(tag string) (err error) {
 			util.PushErrMsg(Conf.Language(29), 5000)
 			return
 		}
+	case conf.ProviderLAN:
 	case conf.ProviderWebDAV, conf.ProviderS3, conf.ProviderLocal:
 		if !IsPaidUser() {
 			util.PushErrMsg(Conf.Language(214), 5000)
@@ -918,6 +921,7 @@ func GetCloudRepoTagSnapshots() (ret []*dejavu.Log, err error) {
 			util.PushErrMsg(Conf.Language(29), 5000)
 			return
 		}
+	case conf.ProviderLAN:
 	case conf.ProviderWebDAV, conf.ProviderS3, conf.ProviderLocal:
 		if !IsPaidUser() {
 			util.PushErrMsg(Conf.Language(214), 5000)
@@ -954,6 +958,7 @@ func GetCloudRepoSnapshots(page int) (ret []*dejavu.Log, pageCount, totalCount i
 			util.PushErrMsg(Conf.Language(29), 5000)
 			return
 		}
+	case conf.ProviderLAN:
 	case conf.ProviderWebDAV, conf.ProviderS3, conf.ProviderLocal:
 		if !IsPaidUser() {
 			util.PushErrMsg(Conf.Language(214), 5000)
@@ -1913,6 +1918,8 @@ func newRepository() (ret *dejavu.Repo, err error) {
 		cloudRepo = cloud.NewWebDAV(&cloud.BaseCloud{Conf: cloudConf}, webdavClient)
 	case conf.ProviderLocal:
 		cloudRepo = cloud.NewLocal(&cloud.BaseCloud{Conf: cloudConf})
+	case conf.ProviderLAN:
+		cloudRepo = newLANCloud(&cloud.BaseCloud{Conf: cloudConf})
 	default:
 		err = fmt.Errorf("unknown cloud provider [%d]", Conf.Sync.Provider)
 		return
@@ -2202,6 +2209,17 @@ func buildCloudConf() (ret *cloud.Conf, err error) {
 			Endpoint:       Conf.Sync.Local.Endpoint,
 			Timeout:        Conf.Sync.Local.Timeout,
 			ConcurrentReqs: Conf.Sync.Local.ConcurrentReqs,
+		}
+	case conf.ProviderLAN:
+		ret.Endpoint = Conf.Sync.LAN.Endpoint
+		ret.Extras = map[string]interface{}{
+			"deviceID":       Conf.Sync.LAN.DeviceID,
+			"deviceName":     Conf.Sync.LAN.DeviceName,
+			"authToken":      Conf.Sync.LAN.AuthToken,
+			"basePath":       Conf.Sync.LAN.BasePath,
+			"serve":          Conf.Sync.LAN.Serve,
+			"timeout":        Conf.Sync.LAN.Timeout,
+			"concurrentReqs": Conf.Sync.LAN.ConcurrentReqs,
 		}
 	default:
 		err = fmt.Errorf("invalid provider [%d]", Conf.Sync.Provider)

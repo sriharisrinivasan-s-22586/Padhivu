@@ -254,6 +254,8 @@ func checkSync(boot, exit, byHand bool) bool {
 			Conf.Save()
 			return false
 		}
+	case conf.ProviderLAN:
+		break
 	case conf.ProviderWebDAV, conf.ProviderS3, conf.ProviderLocal:
 		if !IsPaidUser() {
 			Conf.Sync.Enabled = false
@@ -523,7 +525,7 @@ var (
 
 func CreateCloudSyncDir(name string) (err error) {
 	switch Conf.Sync.Provider {
-	case conf.ProviderSiYuan, conf.ProviderLocal:
+	case conf.ProviderSiYuan, conf.ProviderLocal, conf.ProviderLAN:
 		break
 	default:
 		err = errors.New(Conf.Language(131))
@@ -551,7 +553,7 @@ func CreateCloudSyncDir(name string) (err error) {
 
 func RemoveCloudSyncDir(name string) (err error) {
 	switch Conf.Sync.Provider {
-	case conf.ProviderSiYuan, conf.ProviderLocal:
+	case conf.ProviderSiYuan, conf.ProviderLocal, conf.ProviderLAN:
 		break
 	default:
 		err = errors.New(Conf.Language(131))
@@ -741,6 +743,9 @@ func isProviderOnline(byHand bool) (ret bool) {
 	case conf.ProviderLocal:
 		checkURL = "file://" + Conf.Sync.Local.Endpoint
 		timeout = Conf.Sync.Local.Timeout * 1000
+	case conf.ProviderLAN:
+		checkURL = strings.TrimRight(Conf.Sync.LAN.Endpoint, "/") + "/api/sync/lan/ping"
+		timeout = Conf.Sync.LAN.Timeout * 1000
 	default:
 		logging.LogWarnf("unknown provider: %d", Conf.Sync.Provider)
 		return false

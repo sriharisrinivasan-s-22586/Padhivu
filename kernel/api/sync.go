@@ -416,10 +416,11 @@ func getSyncInfo(c *gin.Context) {
 	}
 
 	ret.Data = map[string]interface{}{
-		"synced":  model.Conf.Sync.Synced,
-		"stat":    stat,
-		"kernels": model.GetOnlineKernels(),
-		"kernel":  model.KernelID,
+		"synced":     model.Conf.Sync.Synced,
+		"stat":       stat,
+		"kernels":    model.GetOnlineKernels(),
+		"kernel":     model.KernelID,
+		"lanDevices": model.GetLANConnectedDevices(),
 	}
 }
 

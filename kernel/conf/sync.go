@@ -29,6 +29,7 @@ type Sync struct {
 	S3                  *S3     `json:"s3"`                  // S3 对象存储服务配置
 	WebDAV              *WebDAV `json:"webdav"`              // WebDAV 服务配置
 	Local               *Local  `json:"local"`               // 本地文件系统 服务配置
+	LAN                 *LAN    `json:"lan"`                 // 局域网同步配置
 }
 
 func NewSync() *Sync {
@@ -40,6 +41,7 @@ func NewSync() *Sync {
 		GenerateConflictDoc: false,
 		Provider:            ProviderSiYuan,
 		Interval:            30,
+		LAN:                 NewLAN(),
 	}
 }
 
@@ -87,6 +89,8 @@ func ProviderToStr(provider int) string {
 		return "WebDAV"
 	case ProviderLocal:
 		return "Local File System"
+	case ProviderLAN:
+		return "LAN Sync"
 	}
 	return "Unknown"
 }

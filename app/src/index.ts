@@ -41,6 +41,24 @@ import {Tag} from "./layout/dock/Tag";
 import {updateControlAlt} from "./protyle/util/hotKey";
 import {updateAppearance} from "./config/util/updateAppearance";
 import {renderSnippet} from "./config/util/snippets";
+import {saveLayout} from "./layout/util";
+
+const rebrandLegacyTabTitles = () => {
+    const legacyTitles = new Set(["SiYuan", "思源笔记"]);
+    let hasChanges = false;
+
+    getAllTabs().forEach((tab) => {
+        const currentTitle = tab.headElement?.querySelector(".item__text")?.textContent?.trim();
+        if (currentTitle && legacyTitles.has(currentTitle)) {
+            tab.updateTitle(window.siyuan.languages.siyuanNote);
+            hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
+        saveLayout();
+    }
+};
 
 export class App {
     public plugins: import("./plugin").Plugin[] = [];
@@ -217,6 +235,7 @@ export class App {
                         window.siyuan.user = userResponse.data;
                         onGetConfig(response.data.start, this);
                         account.onSetaccount();
+                        rebrandLegacyTabTitles();
                         setTitle(window.siyuan.languages.siyuanNote);
                         initMessage();
                         /// #if BROWSER && !MOBILE
